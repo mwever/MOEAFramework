@@ -20,10 +20,16 @@ package org.moeaframework.algorithm;
 import java.io.NotSerializableException;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.moeaframework.core.Algorithm;
 import org.moeaframework.core.Problem;
 import org.moeaframework.core.Solution;
+import org.moeaframework.problem.IBatchEvaluationProblem;
 
 /**
  * Abstract class providing default implementations for several
@@ -36,6 +42,8 @@ import org.moeaframework.core.Solution;
  * individually.
  */
 public abstract class AbstractAlgorithm implements Algorithm {
+
+	public static int NUM_CPU_CORES = 4;
 
 	/**
 	 * The problem being solved.
@@ -61,10 +69,10 @@ public abstract class AbstractAlgorithm implements Algorithm {
 
 	/**
 	 * Constructs an abstract algorithm for solving the specified problem.
-	 * 
+	 *
 	 * @param problem the problem being solved
 	 */
-	public AbstractAlgorithm(Problem problem) {
+	public AbstractAlgorithm(final Problem problem) {
 		super();
 		this.problem = problem;
 	}
@@ -74,39 +82,68 @@ public abstract class AbstractAlgorithm implements Algorithm {
 	 * {@link #evaluate(Solution)} on each of the solutions. Subclasses should
 	 * prefer calling this method over {@code evaluate} whenever possible,
 	 * as this ensures the solutions can be evaluated in parallel.
-	 * 
+	 *
 	 * @param solutions the solutions to evaluate
 	 */
-	public void evaluateAll(Iterable<Solution> solutions) {
-		for (Solution solution : solutions) {
-			evaluate(solution);
+	public void evaluateAll(final Iterable<Solution> solutions) {
+		if (this.problem instanceof IBatchEvaluationProblem) {
+			List<Solution> batch = new LinkedList<>();
+			for (Solution solution : solutions) {
+				batch.add(solution);
+			}
+			((IBatchEvaluationProblem) this.problem).evaluateAll(batch);
+		} else {
+			if (NUM_CPU_CORES > 1) {
+				ExecutorService pool = Executors.newFixedThreadPool(NUM_CPU_CORES);
+
+				for (Solution solution : solutions) {
+					pool.submit(new Runnable() {
+						@Override
+						public void run() {
+							AbstractAlgorithm.this.evaluate(solution);
+						}
+					});
+				}
+
+				pool.shutdown();
+				try {
+					pool.awaitTermination(24, TimeUnit.HOURS);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					System.exit(0);
+				}
+			} else {
+				for (Solution solution : solutions) {
+					this.evaluate(solution);
+				}
+			}
 		}
 	}
-	
+
 	/**
 	 * Evaluates the specified solutions.  This method is equivalent to
 	 * {@code evaluateAll(Arrays.asList(solutions))}.
-	 * 
+	 *
 	 * @param solutions the solutions to evaluate
 	 */
-	public void evaluateAll(Solution[] solutions) {
-		evaluateAll(Arrays.asList(solutions));
+	public void evaluateAll(final Solution[] solutions) {
+		this.evaluateAll(Arrays.asList(solutions));
 	}
 
 	@Override
-	public void evaluate(Solution solution) {
-		problem.evaluate(solution);
-		numberOfEvaluations++;
+	public void evaluate(final Solution solution) {
+		this.problem.evaluate(solution);
+		this.numberOfEvaluations++;
 	}
 
 	@Override
 	public int getNumberOfEvaluations() {
-		return numberOfEvaluations;
+		return this.numberOfEvaluations;
 	}
 
 	@Override
 	public Problem getProblem() {
-		return problem;
+		return this.problem;
 	}
 
 	/**
@@ -116,28 +153,27 @@ public abstract class AbstractAlgorithm implements Algorithm {
 	 * of {@code step}. Implementations should always invoke
 	 * {@code super.initialize()} to ensure the hierarchy is initialized
 	 * correctly.
-	 * 
+	 *
 	 * @throws AlgorithmInitializationException if the algorithm has already
 	 *         been initialized
 	 */
 	protected void initialize() {
-		if (initialized) {
-			throw new AlgorithmInitializationException(this, 
-					"algorithm already initialized");
+		if (this.initialized) {
+			throw new AlgorithmInitializationException(this, "algorithm already initialized");
 		}
 
-		initialized = true;
+		this.initialized = true;
 	}
 
 	/**
 	 * Returns {@code true} if the {@link #initialize()} method has been
 	 * invoked; {@code false} otherwise.
-	 * 
+	 *
 	 * @return {@code true} if the {@link #initialize()} method has been
 	 *         invoked; {@code false} otherwise
 	 */
 	public boolean isInitialized() {
-		return initialized;
+		return this.initialized;
 	}
 
 	/**
@@ -146,19 +182,18 @@ public abstract class AbstractAlgorithm implements Algorithm {
 	 * {@code step} invoke {@link #iterate()}. Implementations should override
 	 * the {@code initialize} and {@code iterate} methods in preference to
 	 * modifying this method.
-	 * 
-	 * @throws AlgorithmTerminationException if the algorithm has already 
+	 *
+	 * @throws AlgorithmTerminationException if the algorithm has already
 	 *         terminated
 	 */
 	@Override
 	public void step() {
-		if (isTerminated()) {
-			throw new AlgorithmTerminationException(this, 
-					"algorithm already terminated");
-		} else if (!isInitialized()) {
-			initialize();
+		if (this.isTerminated()) {
+			throw new AlgorithmTerminationException(this, "algorithm already terminated");
+		} else if (!this.isInitialized()) {
+			this.initialize();
 		} else {
-			iterate();
+			this.iterate();
 		}
 	}
 
@@ -171,7 +206,7 @@ public abstract class AbstractAlgorithm implements Algorithm {
 
 	@Override
 	public boolean isTerminated() {
-		return terminated;
+		return this.terminated;
 	}
 
 	/**
@@ -179,25 +214,24 @@ public abstract class AbstractAlgorithm implements Algorithm {
 	 * the hierarchy is terminated correctly. This method is automatically
 	 * invoked during finalization, and need only be called directly if
 	 * non-Java resources are in use.
-	 * 
-	 * @throws AlgorithmTerminationException if the algorithm has already 
+	 *
+	 * @throws AlgorithmTerminationException if the algorithm has already
 	 *         terminated
 	 */
 	@Override
 	public void terminate() {
-		if (terminated) {
-			throw new AlgorithmTerminationException(this, 
-					"algorithm already terminated");
+		if (this.terminated) {
+			throw new AlgorithmTerminationException(this, "algorithm already terminated");
 		}
 
-		terminated = true;
+		this.terminated = true;
 	}
 
 	@Override
 	protected void finalize() throws Throwable {
 		try {
-			if (!isTerminated()) {
-				terminate();
+			if (!this.isTerminated()) {
+				this.terminate();
 			}
 		} finally {
 			super.finalize();
@@ -206,12 +240,12 @@ public abstract class AbstractAlgorithm implements Algorithm {
 
 	@Override
 	public Serializable getState() throws NotSerializableException {
-		throw new NotSerializableException(getClass().getName());
+		throw new NotSerializableException(this.getClass().getName());
 	}
 
 	@Override
-	public void setState(Object state) throws NotSerializableException {
-		throw new NotSerializableException(getClass().getName());
+	public void setState(final Object state) throws NotSerializableException {
+		throw new NotSerializableException(this.getClass().getName());
 	}
 
 }

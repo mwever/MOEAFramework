@@ -11,3 +11,6 @@ maven/
 *~
 .pydevproject
 jMetal.log*
+/.gradle/
+.classpath
+.project
