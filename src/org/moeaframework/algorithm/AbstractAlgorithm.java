@@ -128,6 +128,7 @@ public abstract class AbstractAlgorithm implements Algorithm {
 	 */
 	public void evaluateAll(final Solution[] solutions) {
 		this.evaluateAll(Arrays.asList(solutions));
+		this.numberOfEvaluations++;
 	}
 
 	@Override
