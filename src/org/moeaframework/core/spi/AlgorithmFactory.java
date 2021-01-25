@@ -9,12 +9,11 @@
  *
  * The MOEA Framework is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with the MOEA Framework.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * along with the MOEA Framework. If not, see <http://www.gnu.org/licenses/>. */
 package org.moeaframework.core.spi;
 
 import java.util.ArrayList;
@@ -40,17 +39,17 @@ public class AlgorithmFactory {
 	 * The static service loader for loading algorithm providers.
 	 */
 	private static final ServiceLoader<AlgorithmProvider> PROVIDERS;
-	
+
 	/**
 	 * The default algorithm factory.
 	 */
 	private static AlgorithmFactory instance;
-	
+
 	/**
 	 * Collection of providers that have been manually added.
 	 */
 	private List<AlgorithmProvider> customProviders;
-	
+
 	/**
 	 * Instantiates the static {@code PROVIDERS} and {@code instance} objects.
 	 */
@@ -58,10 +57,10 @@ public class AlgorithmFactory {
 		PROVIDERS = ServiceLoader.load(AlgorithmProvider.class);
 		instance = new AlgorithmFactory();
 	}
-	
+
 	/**
 	 * Returns the default algorithm factory.
-	 * 
+	 *
 	 * @return the default algorithm factory
 	 */
 	public static synchronized AlgorithmFactory getInstance() {
@@ -70,60 +69,58 @@ public class AlgorithmFactory {
 
 	/**
 	 * Sets the default algorithm factory.
-	 * 
+	 *
 	 * @param instance the default algorithm factory
 	 */
-	public static synchronized void setInstance(AlgorithmFactory instance) {
+	public static synchronized void setInstance(final AlgorithmFactory instance) {
 		AlgorithmFactory.instance = instance;
 	}
-	
+
 	/**
 	 * Constructs a new algorithm factory.
 	 */
 	public AlgorithmFactory() {
 		super();
-		
-		customProviders = new ArrayList<AlgorithmProvider>();
+
+		this.customProviders = new ArrayList<AlgorithmProvider>();
 	}
-	
+
 	/**
-	 * Adds an algorithm provider to this algorithm factory.  Subsequent calls
+	 * Adds an algorithm provider to this algorithm factory. Subsequent calls
 	 * to {@link #getAlgorithm(String, Properties, Problem)} will search the
 	 * given provider for a match.
-	 * 
+	 *
 	 * @param provider the new algorithm provider
 	 */
-	public void addProvider(AlgorithmProvider provider) {
-		customProviders.add(provider);
+	public void addProvider(final AlgorithmProvider provider) {
+		this.customProviders.add(provider);
 	}
 
 	/**
 	 * Searches through all discovered {@code AlgorithmProvider} instances,
 	 * returning an instance of the algorithm with the registered name. The
-	 * algorithm is initialized using implementation-specific properties.  This
+	 * algorithm is initialized using implementation-specific properties. This
 	 * method must throw an {@link ProviderNotFoundException} if no suitable
 	 * algorithm is found.
-	 * 
+	 *
 	 * @param name the name identifying the algorithm
 	 * @param properties the implementation-specific properties
 	 * @param problem the problem to be solved
 	 * @return an instance of the algorithm with the registered name
-	 * @throws ProviderNotFoundException if no provider for the algorithm is 
-	 *         available
+	 * @throws ProviderNotFoundException if no provider for the algorithm is
+	 *             available
 	 */
-	public synchronized Algorithm getAlgorithm(String name, 
-			Properties properties, Problem problem) {
+	public synchronized Algorithm getAlgorithm(final String name, final Properties properties, final Problem problem) {
 		boolean hasStandardAlgorithms = false;
-		
+
 		// loop over all providers that have been manually added
-		for (AlgorithmProvider provider : customProviders) {
-			Algorithm algorithm = instantiateAlgorithm(provider, name,
-					properties, problem);
-			
+		for (AlgorithmProvider provider : this.customProviders) {
+			Algorithm algorithm = this.instantiateAlgorithm(provider, name, properties, problem);
+
 			if (provider.getClass() == StandardAlgorithms.class) {
 				hasStandardAlgorithms = true;
 			}
-			
+
 			if (algorithm != null) {
 				return algorithm;
 			}
@@ -131,26 +128,24 @@ public class AlgorithmFactory {
 
 		// loop over all providers available via the SPI
 		Iterator<AlgorithmProvider> iterator = PROVIDERS.iterator();
-		
+
 		while (iterator.hasNext()) {
 			AlgorithmProvider provider = iterator.next();
-			Algorithm algorithm = instantiateAlgorithm(provider, name,
-					properties, problem);
-			
+			Algorithm algorithm = this.instantiateAlgorithm(provider, name, properties, problem);
+
 			if (provider.getClass() == StandardAlgorithms.class) {
 				hasStandardAlgorithms = true;
 			}
-			
+
 			if (algorithm != null) {
 				return algorithm;
 			}
 		}
-		
+
 		// always ensure we check the standard algorithms
 		if (!hasStandardAlgorithms) {
-			Algorithm algorithm = instantiateAlgorithm(
-					new StandardAlgorithms(), name, properties, problem);
-			
+			Algorithm algorithm = this.instantiateAlgorithm(new StandardAlgorithms(), name, properties, problem);
+
 			if (algorithm != null) {
 				return algorithm;
 			}
@@ -158,10 +153,10 @@ public class AlgorithmFactory {
 
 		throw new ProviderNotFoundException(name);
 	}
-	
+
 	/**
 	 * Attempts to instantiate the given algorithm using the given provider.
-	 * 
+	 *
 	 * @param provider the algorithm provider
 	 * @param name the name identifying the algorithm
 	 * @param properties the implementation-specific properties
@@ -169,14 +164,13 @@ public class AlgorithmFactory {
 	 * @return an instance of the algorithm with the registered name; or
 	 *         {@code null} if the provider does not implement the algorithm
 	 */
-	private Algorithm instantiateAlgorithm(AlgorithmProvider provider,
-			String name, Properties properties, Problem problem) {
+	protected Algorithm instantiateAlgorithm(final AlgorithmProvider provider, final String name, final Properties properties, final Problem problem) {
 		try {
-			return provider.getAlgorithm(name, properties, problem);
+			return provider.getAlgorithm(name, properties, problem, null);
 		} catch (ServiceConfigurationError e) {
 			System.err.println(e.getMessage());
 		}
-		
+
 		return null;
 	}
 

@@ -9,18 +9,18 @@
  *
  * The MOEA Framework is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with the MOEA Framework.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * along with the MOEA Framework. If not, see <http://www.gnu.org/licenses/>. */
 package org.moeaframework.algorithm.pisa;
 
 import java.io.IOException;
 import java.util.Properties;
 
 import org.moeaframework.core.Algorithm;
+import org.moeaframework.core.Initialization;
 import org.moeaframework.core.Problem;
 import org.moeaframework.core.Settings;
 import org.moeaframework.core.Variation;
@@ -36,41 +36,52 @@ import org.moeaframework.core.spi.ProviderNotFoundException;
  * file (typically {@code global.properties}) must be updated with the new
  * PISA selector. As an example, for the HypE selector, add the selector name,
  * {@code hype}, to the list of PISA algorithms:
+ * 
  * <pre>
  *   org.moeaframework.util.pisa.algorithms = hype, spea2, nsga2
  * </pre>
- * For each algorithm, define its configuration options below.  For the example
+ * 
+ * For each algorithm, define its configuration options below. For the example
  * of {@code hype}, specify the following:
  * <ol>
- *   <li>The executable to run:
- *     <pre>
+ * <li>The executable to run:
+ * 
+ * <pre>
  *        org.moeaframework.algorithm.pisa.hype.command = ./path/to/hype.exe
- *     </pre>
- *   <li>The list of parameters:
- *     <pre>
+ * </pre>
+ * 
+ * <li>The list of parameters:
+ * 
+ * <pre>
  *        org.moeaframework.algorithm.pisa.hype.parameters = seed, tournament, mating, bound, nrOfSamples
- *     </pre>
- *     The order typically matters, so ensure the parameters are listed in the
- *     same order as expected by the executable.
- *   <li>For each parameter, specify its default value:
- *     <pre>
+ * </pre>
+ * 
+ * The order typically matters, so ensure the parameters are listed in the
+ * same order as expected by the executable.
+ * <li>For each parameter, specify its default value:
+ * 
+ * <pre>
  *        org.moeaframework.algorithm.pisa.hype.parameter.tournament = 5
  *        org.moeaframework.algorithm.pisa.hype.parameter.mating = 1
  *        ...
- *     </pre>
- *     It is not necessary to give a default for the seed parameter as it is
- *     set automatically by the MOEA Framework.
+ * </pre>
+ * 
+ * It is not necessary to give a default for the seed parameter as it is
+ * set automatically by the MOEA Framework.
  * </ol>
  * Note: Prior to version 1.14, the MOEA Framework only accepted a static
  * version of the algorithm parameters using the option:
+ * 
  * <pre>
  *   org.moeaframework.algorithm.pisa.hype.configuration = ./path/to/hype_params.txt
  * </pre>
+ * 
  * This is still accepted, but would mean the MOEA Framework is unable to
- * change the algorithm parameters.  Once completed, the PISA selector can be
+ * change the algorithm parameters. Once completed, the PISA selector can be
  * used with:
+ * 
  * <pre>
- *   Algorithm algorithm = AlgorithmFactory.getInstance().getAlgorithm("hype", properties, problem);
+ * Algorithm algorithm = AlgorithmFactory.getInstance().getAlgorithm("hype", properties, problem);
  * </pre>
  */
 public class PISAAlgorithms extends AlgorithmProvider {
@@ -81,40 +92,37 @@ public class PISAAlgorithms extends AlgorithmProvider {
 	public PISAAlgorithms() {
 		super();
 	}
-	
+
 	/**
 	 * Returns the case-sensitive version of the PISA algorithm name.
-	 * 
+	 *
 	 * @param name the case-insensitive name
 	 * @return the case-sensitive name
 	 */
-	protected String getCaseSensitiveSelectorName(String name) {
+	protected String getCaseSensitiveSelectorName(final String name) {
 		for (String selector : Settings.getPISAAlgorithms()) {
 			if (selector.equalsIgnoreCase(name)) {
 				return selector;
 			}
 		}
-		
+
 		return null;
 	}
 
 	@Override
-	public Algorithm getAlgorithm(String name, Properties properties,
-			Problem problem) {
-		//lookup the case-sensitive version of the PISA algorithm name to 
-		//generate the correct property keys
-		name = getCaseSensitiveSelectorName(name);
+	public Algorithm getAlgorithm(String name, final Properties properties, final Problem problem, final Initialization initialization) {
+		// lookup the case-sensitive version of the PISA algorithm name to
+		// generate the correct property keys
+		name = this.getCaseSensitiveSelectorName(name);
 
 		if (name != null) {
 			if (problem.getNumberOfConstraints() > 0) {
-				throw new ProviderNotFoundException(name, 
-						new ProviderLookupException("constraints not supported"));
+				throw new ProviderNotFoundException(name, new ProviderLookupException("constraints not supported"));
 			}
-			
+
 			try {
-				Variation variation = OperatorFactory.getInstance()
-						.getVariation(null, properties, problem);
-				
+				Variation variation = OperatorFactory.getInstance().getVariation(null, properties, problem);
+
 				return new PISAAlgorithm(name, problem, variation, properties);
 			} catch (IOException e) {
 				throw new ProviderNotFoundException(name, e);
@@ -123,5 +131,5 @@ public class PISAAlgorithms extends AlgorithmProvider {
 			return null;
 		}
 	}
-	
+
 }

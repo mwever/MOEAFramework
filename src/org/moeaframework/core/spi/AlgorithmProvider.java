@@ -9,17 +9,17 @@
  *
  * The MOEA Framework is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with the MOEA Framework.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * along with the MOEA Framework. If not, see <http://www.gnu.org/licenses/>. */
 package org.moeaframework.core.spi;
 
 import java.util.Properties;
 
 import org.moeaframework.core.Algorithm;
+import org.moeaframework.core.Initialization;
 import org.moeaframework.core.Problem;
 
 /**
@@ -41,8 +41,8 @@ import org.moeaframework.core.Problem;
  * {@link AlgorithmFactory#getAlgorithm} methods.
  * <p>
  * As algorithm names are often used in file names, it is best to avoid
- * characters which are not compatible with the file system.  It is suggested
- * that names match the following regular expression:  
+ * characters which are not compatible with the file system. It is suggested
+ * that names match the following regular expression:
  * {@code ^[a-zA-Z0-9()\-,]+$}.
  */
 public abstract class AlgorithmProvider {
@@ -59,14 +59,13 @@ public abstract class AlgorithmProvider {
 	 * provider does not support the algorithm. An optional set of properties
 	 * may be provided to further define the algorithm; however, the provider is
 	 * expected to supply default properties if none are provided.
-	 * 
+	 *
 	 * @param name the algorithm name
 	 * @param properties optional properties for the algorithm
 	 * @param problem the problem
 	 * @return the algorithm with the specified name, or {@code null} if this
 	 *         provider does not support the algorithm
 	 */
-	public abstract Algorithm getAlgorithm(String name, Properties properties,
-			Problem problem);
+	public abstract Algorithm getAlgorithm(String name, Properties properties, Problem problem, Initialization initialization);
 
 }
