@@ -264,7 +264,7 @@ public class StandardAlgorithms extends AlgorithmProvider {
 			} else if (name.equalsIgnoreCase("GDE3")) {
 				return this.newGDE3(typedProperties, problem);
 			} else if (name.equalsIgnoreCase("NSGAII") || name.equalsIgnoreCase("NSGA-II") || name.equalsIgnoreCase("NSGA2")) {
-				return this.newNSGAII(typedProperties, problem);
+				return this.newNSGAII(typedProperties, problem, initialization);
 			} else if (name.equalsIgnoreCase("NSGAIII") || name.equalsIgnoreCase("NSGA-III") || name.equalsIgnoreCase("NSGA3")) {
 				return this.newNSGAIII(typedProperties, problem);
 			} else if (name.equalsIgnoreCase("eNSGAII") || name.equalsIgnoreCase("e-NSGA-II") || name.equalsIgnoreCase("eNSGA2")) {
@@ -373,10 +373,13 @@ public class StandardAlgorithms extends AlgorithmProvider {
 	 * @param problem the problem
 	 * @return a new {@code NSGAII} instance
 	 */
-	private Algorithm newNSGAII(final TypedProperties properties, final Problem problem) {
+	private Algorithm newNSGAII(final TypedProperties properties, final Problem problem, final Initialization initialization) {
 		int populationSize = (int) properties.getDouble("populationSize", 100);
 
-		Initialization initialization = new RandomInitialization(problem, populationSize);
+		Initialization initializationToBeUsed = initialization;
+		if (initializationToBeUsed == null) {
+			initializationToBeUsed = new RandomInitialization(problem, populationSize);
+		}
 
 		NondominatedSortingPopulation population = new NondominatedSortingPopulation();
 
@@ -388,7 +391,7 @@ public class StandardAlgorithms extends AlgorithmProvider {
 
 		Variation variation = OperatorFactory.getInstance().getVariation(null, properties, problem);
 
-		return new NSGAII(problem, population, null, selection, variation, initialization);
+		return new NSGAII(problem, population, null, selection, variation, initializationToBeUsed);
 	}
 
 	/**
